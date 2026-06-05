@@ -1007,7 +1007,7 @@ def calculate_results():
     if all(g >= 17 for g in balance_values):
         category_score += 4
 
-    star_power = (team_allstars * 0.25) + (team_mvp * 33)
+    star_power = (team_allstars * 0.25) + (team_mvp * 40)
     star_power = min(40, star_power)
 
     final_score = (category_score * 0.60) + (star_power * 0.40)
