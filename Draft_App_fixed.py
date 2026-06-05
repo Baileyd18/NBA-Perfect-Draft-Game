@@ -1012,7 +1012,7 @@ def calculate_results():
 
     final_score = (category_score * 0.50) + (star_power * 0.50)
 
-    wins = round(max(15, min(82, 27 + (final_score * 0.60))))
+    wins = round(max(15, min(82, 27 + (final_score * 0.95))))
     losses = 82 - wins
 
     if wins >= 82:
