@@ -1007,13 +1007,12 @@ def calculate_results():
     if all(g >= 17 for g in balance_values):
         category_score += 4
 
-    star_power = (team_allstars * 0.20) + (team_mvp * 20)
-    star_power = min(35, star_power)
+   star_power = (team_allstars * 0.35) + (team_mvp * 28)
+star_power = min(40, star_power)
 
-    final_score = (category_score * 0.75) + (star_power * 0.25)
+final_score = (category_score * 0.60) + (star_power * 0.40)
 
-    wins = round(max(15, min(82, 27 + (final_score * 0.69))))
-    losses = 82 - wins
+wins = round(max(15, min(82, 35 + (final_score * 0.80))))
 
     if wins >= 82:
         tier = "Perfect Team"
