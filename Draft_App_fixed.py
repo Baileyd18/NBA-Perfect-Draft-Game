@@ -11,7 +11,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-DATA_PATH = r"C:\Users\dilla\OneDrive\Desktop\NBA Game\nba_game_database_current.csv"
+DATA_PATH = "nba_game_database_current.csv"
 
 ROSTER_SIZE = 6
 BUDGET = 500
