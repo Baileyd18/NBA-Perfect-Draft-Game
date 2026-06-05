@@ -1336,9 +1336,76 @@ st.markdown('<hr class="app-divider">', unsafe_allow_html=True)
 team = st.session_state.team or "---"
 decade = st.session_state.decade or "---"
 
-left, right = st.columns([1, 1.05], gap="large")
+mobile_mode = st.query_params.get("mobile", "0") == "1"
 
-with left:
+
+def render_budget_cards():
+    st.markdown(
+        f"""
+        <div class="info-row">
+            <div class="info-card">
+                <div class="info-label">Budget</div>
+                <div class="info-value purple">${BUDGET}</div>
+            </div>
+            <div class="info-card">
+                <div class="info-label">Spent</div>
+                <div class="info-value">${st.session_state.spent}</div>
+            </div>
+            <div class="info-card">
+                <div class="info-label">Remaining</div>
+                <div class="info-value green">${st.session_state.budget}</div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+
+def render_roster_mobile():
+    roster_by_slot = {p["DraftPosition"]: p for p in st.session_state.roster}
+
+    st.markdown(
+        f"""
+        <div class="mobile-roster-title">
+            ROSTER ({len(st.session_state.roster)}/{ROSTER_SIZE})
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    for slot in POSITIONS:
+        if slot in roster_by_slot:
+            p = roster_by_slot[slot]
+
+            st.markdown(
+                f"""
+                <div class="mobile-slot-card">
+                    <div class="mobile-slot-badge filled">{slot}</div>
+                    <div class="mobile-slot-main">
+                        <div class="mobile-slot-player">{p["Player"]}</div>
+                        <div class="mobile-slot-meta">{p["TeamAbbr"]} · {p["Decade"]}</div>
+                    </div>
+                    <div class="mobile-slot-cost">${int(p["Cost"])}</div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+        else:
+            st.markdown(
+                f"""
+                <div class="mobile-slot-card empty">
+                    <div class="mobile-slot-badge">{slot}</div>
+                    <div class="mobile-slot-main">
+                        <div class="mobile-slot-empty">Empty</div>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+
+def render_spin_cards():
     card_left, card_right = st.columns(2, gap="large")
 
     with card_left:
@@ -1369,157 +1436,107 @@ with left:
             unsafe_allow_html=True
         )
 
-    if st.button("SPIN", disabled=st.session_state.has_active_spin, use_container_width=True):
-        spin()
-        st.rerun()
 
-    controls = st.columns(3)
-
-    with controls[0]:
-        if st.button(
-            "🔄 Team",
-            disabled=not st.session_state.has_active_spin or st.session_state.team_respin_used,
-            use_container_width=True
-        ):
-            respin_team()
-            st.rerun()
-
-    with controls[1]:
-        if st.button(
-            "🔄 Era",
-            disabled=not st.session_state.has_active_spin or st.session_state.decade_respin_used,
-            use_container_width=True
-        ):
-            respin_decade()
-            st.rerun()
-
-    with controls[2]:
-        if st.button("Reset", use_container_width=True):
-            reset_game()
-            st.rerun()
-
-    reserve_note = max(0, (ROSTER_SIZE - len(st.session_state.roster) - 1) * MIN_PLAYER_COST)
-    max_next_cost = max_allowed_cost_for_next_pick() if len(st.session_state.roster) < ROSTER_SIZE else 0
-
-    st.markdown(
-        f"""
-        <div class="info-row">
-            <div class="info-card">
-                <div class="info-label">Budget</div>
-                <div class="info-value purple">{BUDGET}</div>
-            </div>
-            <div class="info-card">
-                <div class="info-label">Spent</div>
-                <div class="info-value">{st.session_state.spent}</div>
-            </div>
-            <div class="info-card">
-                <div class="info-label">Left</div>
-                <div class="info-value green">{st.session_state.budget}</div>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-    if len(st.session_state.roster) < ROSTER_SIZE:
-        st.caption(f"Max next pick: {max_next_cost} · Reserved minimum after pick: {reserve_note}")
-
+def render_available_players():
     st.markdown('<div class="section-title">Available Players</div>', unsafe_allow_html=True)
 
     if not st.session_state.has_active_spin:
         st.markdown('<div class="notice-card">Spin to reveal available players.</div>', unsafe_allow_html=True)
+        return
 
-    elif st.session_state.options.empty:
+    if st.session_state.options.empty:
         st.markdown('<div class="notice-card">No affordable players fit your remaining roster slots.</div>', unsafe_allow_html=True)
+        return
 
-    else:
-        tools = st.columns([1.15, 1.1, 1.0], gap="small")
+    tools = st.columns([1.15, 1.1, 1.0], gap="small")
 
-        with tools[0]:
-            position_filter = st.selectbox(
-                "Position",
-                ["All", "PG", "SG", "SF", "PF", "C"],
-                label_visibility="collapsed"
-            )
+    with tools[0]:
+        position_filter = st.selectbox(
+            "Position",
+            ["All", "PG", "SG", "SF", "PF", "C"],
+            label_visibility="collapsed"
+        )
 
-        with tools[1]:
-            search_term = st.text_input(
-                "Search",
-                placeholder="Search...",
-                label_visibility="collapsed"
-            )
+    with tools[1]:
+        search_term = st.text_input(
+            "Search",
+            placeholder="Search...",
+            label_visibility="collapsed"
+        )
 
-        with tools[2]:
-            sort_choice = st.selectbox(
-                "Sort",
-                ["PPG", "RPG", "APG", "SPG", "BPG", "Cost Low", "Cost High"],
-                label_visibility="collapsed"
-            )
+    with tools[2]:
+        sort_choice = st.selectbox(
+            "Sort",
+            ["PPG", "RPG", "APG", "SPG", "BPG", "Cost Low", "Cost High"],
+            label_visibility="collapsed"
+        )
 
-        options = st.session_state.options.copy()
+    options = st.session_state.options.copy()
 
-        if position_filter != "All":
-            options = options[
-                options["Position"].astype(str).str.contains(position_filter, case=False, na=False)
-            ]
+    if position_filter != "All":
+        options = options[
+            options["Position"].astype(str).str.contains(position_filter, case=False, na=False)
+        ]
 
-        if search_term:
-            options = options[
-                options["Player"].astype(str).str.contains(search_term, case=False, na=False)
-            ]
+    if search_term:
+        options = options[
+            options["Player"].astype(str).str.contains(search_term, case=False, na=False)
+        ]
 
-        if sort_choice == "PPG":
-            options = options.sort_values("PPG", ascending=False)
-        elif sort_choice == "RPG":
-            options = options.sort_values("RPG", ascending=False)
-        elif sort_choice == "APG":
-            options = options.sort_values("APG", ascending=False)
-        elif sort_choice == "SPG":
-            options = options.sort_values("SPG", ascending=False)
-        elif sort_choice == "BPG":
-            options = options.sort_values("BPG", ascending=False)
-        elif sort_choice == "Cost Low":
-            options = options.sort_values("Cost", ascending=True)
-        elif sort_choice == "Cost High":
-            options = options.sort_values("Cost", ascending=False)
+    if sort_choice == "PPG":
+        options = options.sort_values("PPG", ascending=False)
+    elif sort_choice == "RPG":
+        options = options.sort_values("RPG", ascending=False)
+    elif sort_choice == "APG":
+        options = options.sort_values("APG", ascending=False)
+    elif sort_choice == "SPG":
+        options = options.sort_values("SPG", ascending=False)
+    elif sort_choice == "BPG":
+        options = options.sort_values("BPG", ascending=False)
+    elif sort_choice == "Cost Low":
+        options = options.sort_values("Cost", ascending=True)
+    elif sort_choice == "Cost High":
+        options = options.sort_values("Cost", ascending=False)
 
-        options = options.reset_index(drop=True)
+    options = options.reset_index(drop=True)
 
-        st.caption(f"{len(options)} players available")
+    st.caption(f"{len(options)} players available")
 
-        with st.container(height=300):
-            for idx, row in options.iterrows():
-                row_cols = st.columns([4.4, 1.0], gap="small")
+    container_height = 520 if mobile_mode else 300
 
-                with row_cols[0]:
-                    st.markdown(
-                        f"""
-                        <div class="player-card">
-                            <div class="player-name">{row["Player"]}</div>
-                            <div class="player-meta">{row["Position"]} • {row["TeamAbbr"]} • {row["Decade"]} • Cost {int(row["Cost"])}</div>
-                            <div class="stat-grid">
-                                <div><div class="stat-num">{float(row.get("PPG", 0)):.1f}</div><div class="stat-lab">PPG</div></div>
-                                <div><div class="stat-num">{float(row.get("RPG", 0)):.1f}</div><div class="stat-lab">RPG</div></div>
-                                <div><div class="stat-num">{float(row.get("APG", 0)):.1f}</div><div class="stat-lab">APG</div></div>
-                                <div><div class="stat-num">{float(row.get("SPG", 0)):.1f}</div><div class="stat-lab">SPG</div></div>
-                                <div><div class="stat-num">{float(row.get("BPG", 0)):.1f}</div><div class="stat-lab">BPG</div></div>
-                            </div>
+    with st.container(height=container_height):
+        for idx, row in options.iterrows():
+            row_cols = st.columns([4.4, 1.0], gap="small")
+
+            with row_cols[0]:
+                st.markdown(
+                    f"""
+                    <div class="player-card">
+                        <div class="player-name">{row["Player"]}</div>
+                        <div class="player-meta">{row["Position"]} • {row["TeamAbbr"]} • {row["Decade"]} • Cost {int(row["Cost"])}</div>
+                        <div class="stat-grid">
+                            <div><div class="stat-num">{float(row.get("PPG", 0)):.1f}</div><div class="stat-lab">PPG</div></div>
+                            <div><div class="stat-num">{float(row.get("RPG", 0)):.1f}</div><div class="stat-lab">RPG</div></div>
+                            <div><div class="stat-num">{float(row.get("APG", 0)):.1f}</div><div class="stat-lab">APG</div></div>
+                            <div><div class="stat-num">{float(row.get("SPG", 0)):.1f}</div><div class="stat-lab">SPG</div></div>
+                            <div><div class="stat-num">{float(row.get("BPG", 0)):.1f}</div><div class="stat-lab">BPG</div></div>
                         </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
 
-                with row_cols[1]:
-                    if st.button(
-                        "Select",
-                        key=f"select_{st.session_state.spin_number}_{idx}",
-                        use_container_width=True
-                    ):
-                        st.session_state.pending_player = row.to_dict()
-                        st.rerun()
+            with row_cols[1]:
+                if st.button(
+                    "Select",
+                    key=f"select_{st.session_state.spin_number}_{idx}",
+                    use_container_width=True
+                ):
+                    st.session_state.pending_player = row.to_dict()
+                    st.rerun()
 
 
-with right:
+def render_roster_desktop():
     st.markdown('<div class="section-title">Roster</div>', unsafe_allow_html=True)
 
     roster_by_slot = {p["DraftPosition"]: p for p in st.session_state.roster}
@@ -1565,3 +1582,95 @@ with right:
         """,
         unsafe_allow_html=True
     )
+
+
+if mobile_mode:
+    # Mobile: spin/cards first, then players, then roster-focused section
+    render_spin_cards()
+
+    if st.button("SPIN", disabled=st.session_state.has_active_spin, use_container_width=True):
+        spin()
+        st.rerun()
+
+    controls = st.columns(3)
+
+    with controls[0]:
+        if st.button(
+            "🔄 Team",
+            disabled=not st.session_state.has_active_spin or st.session_state.team_respin_used,
+            use_container_width=True
+        ):
+            respin_team()
+            st.rerun()
+
+    with controls[1]:
+        if st.button(
+            "🔄 Era",
+            disabled=not st.session_state.has_active_spin or st.session_state.decade_respin_used,
+            use_container_width=True
+        ):
+            respin_decade()
+            st.rerun()
+
+    with controls[2]:
+        if st.button("Reset", use_container_width=True):
+            reset_game()
+            st.rerun()
+
+    render_budget_cards()
+    render_available_players()
+    render_roster_mobile()
+
+    if len(st.session_state.roster) == ROSTER_SIZE:
+        if st.button("CONFIRM TEAM", use_container_width=True):
+            st.session_state.show_results = True
+            st.rerun()
+
+else:
+    # Desktop: keep your original two-column layout
+    left, right = st.columns([1, 1.05], gap="large")
+
+    with left:
+        render_spin_cards()
+
+        if st.button("SPIN", disabled=st.session_state.has_active_spin, use_container_width=True):
+            spin()
+            st.rerun()
+
+        controls = st.columns(3)
+
+        with controls[0]:
+            if st.button(
+                "🔄 Team",
+                disabled=not st.session_state.has_active_spin or st.session_state.team_respin_used,
+                use_container_width=True
+            ):
+                respin_team()
+                st.rerun()
+
+        with controls[1]:
+            if st.button(
+                "🔄 Era",
+                disabled=not st.session_state.has_active_spin or st.session_state.decade_respin_used,
+                use_container_width=True
+            ):
+                respin_decade()
+                st.rerun()
+
+        with controls[2]:
+            if st.button("Reset", use_container_width=True):
+                reset_game()
+                st.rerun()
+
+        reserve_note = max(0, (ROSTER_SIZE - len(st.session_state.roster) - 1) * MIN_PLAYER_COST)
+        max_next_cost = max_allowed_cost_for_next_pick() if len(st.session_state.roster) < ROSTER_SIZE else 0
+
+        render_budget_cards()
+
+        if len(st.session_state.roster) < ROSTER_SIZE:
+            st.caption(f"Max next pick: {max_next_cost} · Reserved minimum after pick: {reserve_note}")
+
+        render_available_players()
+
+    with right:
+        render_roster_desktop()
