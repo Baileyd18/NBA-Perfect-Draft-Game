@@ -569,6 +569,74 @@ st.markdown(
     .mobile-record {{ color:#f8fafc; font-size:64px; font-weight:900; letter-spacing:-3px; line-height:1; margin:10px 0 12px; }}
     .mobile-grade {{ color:#22c55e; font-size:20px; font-weight:900; margin-bottom:18px; }}
 
+    .mobile-roster-title {
+    color: #f8fafc;
+    font-size: 15px;
+    font-weight: 900;
+    letter-spacing: .04em;
+    margin: 20px 0 10px 0;
+}
+
+.mobile-slot-card {
+    display: grid;
+    grid-template-columns: 48px 1fr 52px;
+    align-items: center;
+    gap: 10px;
+    background: #111827;
+    border: 1px solid #263247;
+    border-radius: 12px;
+    padding: 9px 10px;
+    margin-bottom: 8px;
+}
+
+.mobile-slot-card.empty {
+    grid-template-columns: 48px 1fr;
+}
+
+.mobile-slot-badge {
+    width: 40px;
+    height: 40px;
+    border: 2px dashed #475569;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #cbd5e1;
+    font-size: 13px;
+    font-weight: 900;
+}
+
+.mobile-slot-badge.filled {
+    background: #166534;
+    border: 1px solid #166534;
+    color: #ffffff;
+}
+
+.mobile-slot-player {
+    color: #f8fafc;
+    font-size: 14px;
+    font-weight: 900;
+}
+
+.mobile-slot-meta {
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.mobile-slot-empty {
+    color: #94a3b8;
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.mobile-slot-cost {
+    color: #ff5a00;
+    font-size: 13px;
+    font-weight: 900;
+    text-align: right;
+}
+
     @media (max-width:520px) {{
         .block-container {{ padding:0.55rem 0.75rem 0!important; max-width:100%!important; }}
         .mobile-spin-zone {{ padding-top:64px; }}
