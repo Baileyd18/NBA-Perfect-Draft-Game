@@ -1010,7 +1010,7 @@ def calculate_results():
     star_power = (team_allstars * 0.25) + (team_mvp * 40)
     star_power = min(40, star_power)
 
-    final_score = (category_score * 0.60) + (star_power * 0.40)
+    final_score = (category_score * 0.50) + (star_power * 0.50)
 
     wins = round(max(15, min(82, 27 + (final_score * 0.90))))
     losses = 82 - wins
